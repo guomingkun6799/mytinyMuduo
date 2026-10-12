@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "logger.h"
+#include "Timestamp.h"
 
 Logger& Logger::instance() {
     static Logger logger;
@@ -32,5 +33,5 @@ void Logger::log(std::string msg) {
         default:
             break;
     }
-    std::cout <<"print time" << ":" << msg << std::endl;
+    std::cout <<Timestamp::now().toString() << ":" << msg << std::endl;
 }
