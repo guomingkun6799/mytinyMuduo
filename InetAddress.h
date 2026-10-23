@@ -2,8 +2,7 @@
 // Created by MingkunGuo on 2026/10/12.
 //
 
-#ifndef MUDO_GM_INETADDRESS_H
-#define MUDO_GM_INETADDRESS_H
+#pragma once
 
 #include <cstdint>
 #include <netinet/in.h>
@@ -19,10 +18,8 @@ public:
     std::string toIpPort() const;
     uint16_t toPort() const;
 
-    const sockaddr_in* getSockAddr() const {return addr_;};
+    const sockaddr_in* getSockAddr() const {return &addr_;};
+    void setSockAddr(const sockaddr_in &addr) {addr_ = addr;};
 private:
     sockaddr_in addr_;
 };
-
-
-#endif //MUDO_GM_INETADDRESS_H
