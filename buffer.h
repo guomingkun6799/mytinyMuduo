@@ -15,7 +15,7 @@ public:
     static const size_t kInitialSize = 1024;
 
     explicit buffer(size_t initialSize = kInitialSize)
-        : buffer(kCheapPrepend +initialSize)
+        : buffer_(kCheapPrepend + initialSize)
         , readerIndex_(kCheapPrepend)
         , writerIndex_(kCheapPrepend){}
 
@@ -98,6 +98,9 @@ private:
         }
     }
 
+    char* begin() {
+        return &*buffer_.begin();
+    }
     const char* begin() const {
         //1. it.operator*()
         //2. 再去地址&
