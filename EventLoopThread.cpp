@@ -23,6 +23,7 @@ EventLoopThread::~EventLoopThread() {
 }
 
 EventLoop *EventLoopThread::startLoop() {
+
     thread_.start();
 
     EventLoop *loop = nullptr;

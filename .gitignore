@@ -1,0 +1,48 @@
+build/
+build-*/
+out/
+cmake-build-debug/
+cmake-build-release/
+cmake-build-*/
+
+# ---- CMake 生成物 ----
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+*.cmake.user
+compile_commands.json
+_deps/
+
+# ---- 编译产物（目标文件 / 库 / 可执行文件） ----
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dll
+*.dylib
+*.exe
+*.out
+
+# ---- CLion / IDE ----
+.idea/
+*.iml
+*.iws
+.vscode/
+cxx/
+
+# ---- 编译器/系统 ----
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- 测试 / 覆盖率 ----
+*.gcda
+*.gcno
+*.gcov
+*.log
