@@ -68,7 +68,6 @@ private:
     void send(const std::string &buf);
 
     void sendInLoop(const void* data, size_t len);
-    void shutdownInLoop();
 
     EventLoop *loop_; // 这里绝对不是baseloop
     const std::string name_;

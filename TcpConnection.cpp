@@ -38,7 +38,7 @@ TcpConnection::TcpConnection(EventLoop *loop, const std::string &name, int socke
     channel_ -> setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
     channel_ -> setCloseCallback(std::bind(&TcpConnection::handleClose, this));
     channel_ -> setErrorCallback(std::bind(&TcpConnection::handleError, this));
-    LOG_INFO("TcpConnection::TcpConnection [%s] in loop %p at fd:%d\n", name_.c_str(), loop_, sockfd);
+    LOG_INFO("TcpConnection::TcpConnection [%s] in loop %p at fd:%d\n", name_.c_str(), loop_, socketfd);
     socket_->setKeepAlive(true);
 }
 
