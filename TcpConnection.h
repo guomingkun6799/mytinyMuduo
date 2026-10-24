@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <atomic>
+#include <string>
 
 class Channel;
 class EventLoop;
@@ -38,11 +39,9 @@ public:
 
     bool connected() const { return state_ == kConnected; };
     bool disconnected() const { return state_ == kDisconnected; };
-
-    //发送数据
-    void send(buffer* message);
     //关闭连接
     void shutdown();
+    void shutdownInLoop();
 
     void setConnectionCallback(const ConnectionCallback& connectionCallback) {connectionCallback_ = connectionCallback;};
     void setMessageCallback(const MessageCallback& messageCallback) {messageCallback_ = messageCallback;};
@@ -54,8 +53,10 @@ public:
     void connectEstablished();
     void connectDestroyed();
 
+    void setState(StateE state) {state_ = state;};
+    const char* stateToString() const;
 private:
-    enum State {
+    enum StateE {
         kDisconnected, kConnecting, kConnected, kDisconnecting
     };
 
@@ -64,7 +65,9 @@ private:
     void handleClose();
     void handleError();
 
-    void sendInLoop(const void* message, size_t len);
+    void send(const std::string &buf);
+
+    void sendInLoop(const void* data, size_t len);
     void shutdownInLoop();
 
     EventLoop *loop_; // 这里绝对不是baseloop

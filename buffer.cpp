@@ -6,6 +6,8 @@
 
 #include <errno.h>
 #include <sys/uio.h>
+#include <unistd.h>
+
 //从fd上读取数据， Poller工作在LT模式
 ssize_t buffer::readFd(int fd, int *savedErrno) {
     char extrabuf[65536] = {0}; // 栈上的内存空间 64k
@@ -26,6 +28,14 @@ ssize_t buffer::readFd(int fd, int *savedErrno) {
     } else { //extrabuf里面也写入了数据
         writerIndex_ = buffer_.size();
         append(extrabuf, n - writable);
+    }
+    return n;
+}
+
+ssize_t buffer::writeFd(int fd, int *savedErrno) {
+    ssize_t n = ::write(fd, peek(), readableBytes());
+    if (n < 0) {
+        *savedErrno = errno;
     }
     return n;
 }

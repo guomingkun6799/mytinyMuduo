@@ -82,6 +82,9 @@ public:
 
     //从fd上读取数据
     ssize_t readFd(int fd, int* savedErrno);
+    //往fd写出数据
+    ssize_t writeFd(int fd, int* savedErrno);
+    ssize_t writeFd(int fd, int* savedErrno);
 
 private:
 
