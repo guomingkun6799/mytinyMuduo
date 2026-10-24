@@ -19,3 +19,5 @@ using CloseCallback = std::function<void(const TcpConnectionPtr&)>;
 
 using MessageCallback = std::function<void(
     const TcpConnectionPtr&, buffer*, Timestamp)>;
+
+using HighWaterMarkCallback = std::function<void(const TcpConnectionPtr&, size_t)>;
