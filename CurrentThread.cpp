@@ -8,7 +8,7 @@
 
 
 namespace CurrentThread {
-    __thread int t_cachedTid;
+    __thread int t_cachedTid = 0;
 
     void cachedTid() {
         if (t_cachedTid == 0) {

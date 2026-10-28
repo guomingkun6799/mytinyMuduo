@@ -6,11 +6,12 @@
 
 #include "noncopyable.h"
 
-#include <functional>
-#include <Thread.h>
-#include <mutex>
 #include <condition_variable>
+#include <functional>
+#include <mutex>
 #include <string>
+
+#include "Thread.h"
 
 class EventLoop;
 

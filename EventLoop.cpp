@@ -9,8 +9,8 @@
 
 #include <sys/eventfd.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <cstdint>
 #include <memory>
 
 //防止一个线程创建多个EventLoop thread_local
@@ -30,15 +30,16 @@ int createEventfd() {
 EventLoop::EventLoop()
     : looping_(false)
     , quit_(false)
-    , callingPendingFunctors_(false)
     , threadId_(CurrentThread::tid())
+    , pollReturnTime_()
     , poller_(Poller::newDefaultPoller(this))
     , wakeupFd_(createEventfd())
     , wakeupChannel_(new Channel(this, wakeupFd_))
-    , currentActiveChannel_(nullptr) {
-    LOG_DEBUG("Eventloop created %p in thread %d", this, threadId_);
+    , currentActiveChannel_(nullptr)
+    , callingPendingFunctors_(false) {
+    LOG_DEBUG("Eventloop created %p in thread %d", this, static_cast<int>(threadId_));
     if (t_loopInthisThread) {
-        LOG_FATAL("Another EventLoop %p created in thread %d",this, threadId_);
+        LOG_FATAL("Another EventLoop %p created in thread %d", this, static_cast<int>(threadId_));
     } else {
         t_loopInthisThread = this;
     }
@@ -52,7 +53,9 @@ EventLoop::~EventLoop() {
     wakeupChannel_ -> disableAll();
     wakeupChannel_ -> remove();
     ::close(wakeupFd_);
-    t_loopInthisThread = nullptr;
+    if (t_loopInthisThread == this) {
+        t_loopInthisThread = nullptr;
+    }
 }
 
 //开启事件循环
@@ -66,8 +69,10 @@ void EventLoop::loop() {
         pollReturnTime_ = poller_ ->poll(kPollTimeMs, &activeChannels_);
         for (Channel *channel: activeChannels_) {
             //Poller监听哪些channel发生事件了，然后上报给evnetloop， 通知channel处理相应的事件
+            currentActiveChannel_ = channel;
             channel -> handleEvent(pollReturnTime_);
         }
+        currentActiveChannel_ = nullptr;
 
         //执行当前eventloop事件循环需要处理的回调操作
         /**
@@ -131,14 +136,14 @@ void EventLoop::removeChannel(Channel *channel) {
 }
 
 bool EventLoop::hasChannel(Channel *channel) {
-    poller_->hasChannel(channel);
+    return poller_->hasChannel(channel);   // 原来漏了 return，返回值是未定义的
 }
 
 void EventLoop::handleRead() {
     uint64_t one = 1;
     ssize_t n = ::read(wakeupFd_, &one, sizeof(one));
-    if (n != sizeof(one)) {
-        LOG_ERROR("EventLoop::handleRead returned %d", n);
+    if (n != static_cast<ssize_t>(sizeof(one))) {
+        LOG_ERROR("EventLoop::handleRead returned %zd, errno=%d\n", n, errno);
     }
 }
 
@@ -146,7 +151,7 @@ void EventLoop::handleRead() {
 void EventLoop::wakeup() {
     uint64_t one = 1;
     ssize_t n = ::write(wakeupFd_, &one, sizeof(one));
-    if (n != sizeof(one)) {
-        LOG_ERROR("EventLoop::wakeup returned %d", n);
+    if (n != static_cast<ssize_t>(sizeof(one))) {
+        LOG_ERROR("EventLoop::wakeup returned %zd, errno=%d\n", n, errno);
     }
 }

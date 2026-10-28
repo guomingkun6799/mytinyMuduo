@@ -17,14 +17,15 @@ Socket::~Socket() {
 }
 
 void Socket::bindAddress(const InetAddress &localaddr) {
-    if (::bind(sockfd_, (sockaddr*)localaddr.getSockAddr(), sizeof(sockaddr_in)) != 0) {
-        LOG_FATAL("bind socketfd:%d failed\n", sockfd_);
+    if (::bind(sockfd_, reinterpret_cast<const sockaddr*>(localaddr.getSockAddr()),
+               static_cast<socklen_t>(sizeof(sockaddr_in))) != 0) {
+        LOG_FATAL("bind socketfd:%d failed, errno=%d\n", sockfd_, errno);
     }
 }
 
 void Socket::listen() {
-    if (::listen(sockfd_, 1024) != 0) {
-        LOG_FATAL("listen socketfd:%d failed\n", sockfd_);
+    if (::listen(sockfd_, SOMAXCONN) != 0) {
+        LOG_FATAL("listen socketfd:%d failed, errno=%d\n", sockfd_, errno);
     }
 }
 
@@ -34,10 +35,13 @@ void Socket::listen() {
  */
 int Socket::accept(InetAddress *peeraddr) {
     sockaddr_in addr;
-    socklen_t len = sizeof(addr);   // 必须初始化为缓冲区大小，否则accept可能写越界
     bzero(&addr, sizeof(addr));
+    socklen_t len = static_cast<socklen_t>(sizeof(addr));   // 必须初始化为缓冲区大小
 
-    int connfd = ::accept(sockfd_, (sockaddr*)&addr, &len);
+    // 用 accept4 一次性把 connfd 设成非阻塞 + CLOEXEC，
+    // 否则 accept 出来的 fd 是阻塞的，会阻塞 IO 线程，这是常见的隐藏 bug。
+    int connfd = ::accept4(sockfd_, reinterpret_cast<sockaddr*>(&addr), &len,
+                           SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (connfd >= 0) {
         peeraddr->setSockAddr(addr);
     }

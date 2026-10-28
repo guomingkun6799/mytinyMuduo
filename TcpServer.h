@@ -4,17 +4,18 @@
 #pragma once
 
 #include "EventLoop.h"
-#include "Accpter.h"
+#include "Acceptor.h"
 #include "InetAddress.h"
 #include "noncopyable.h"
 #include "EventLoopThreadPool.h"
 #include "Callbacks.h"
 
-#include <functional>
-#include <string>
-#include <memory>
 #include <atomic>
+#include <cstdint>
+#include <functional>
+#include <memory>
 #include <string>
+#include <unordered_map>
 
 //对外的服务器编程使用的类
 class TcpServer : noncopyable{
@@ -51,7 +52,7 @@ private:
     EventLoop *loop_; // baseloop用户定义的loop
     const std::string ipPort_;
     const std::string name_;
-    std::unique_ptr<Accpter> accpter_; //运行在mainLoop, 任务就是监听新连接事件
+    std::unique_ptr<Acceptor> acceptor_; //运行在mainLoop, 任务就是监听新连接事件
     std::shared_ptr<EventLoopThreadPool> threadPool_;
 
     ConnectionCallback connectionCallback_; //有新连接时的回调

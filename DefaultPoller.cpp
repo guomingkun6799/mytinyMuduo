@@ -8,11 +8,9 @@
 #include <stdlib.h>
 
 Poller* Poller::newDefaultPoller(EventLoop *loop) {
-    if (::getenv("MUDUO_USE_POOL")) {
-        //生成poll实例
-        return nullptr;
-    } else {
-        //生成epoll实例
+    if (::getenv("MUDUO_USE_POLL")) {
+        // 预留：以后实现 PollPoller 时在这里返回 new PollPoller(loop)
         return new EPollPoller(loop);
     }
+    return new EPollPoller(loop);
 }

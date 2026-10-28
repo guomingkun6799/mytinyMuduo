@@ -10,9 +10,9 @@
 #include "buffer.h"
 #include "Timestamp.h"
 
-#include <memory>
-#include <string>
 #include <atomic>
+#include <cstddef>
+#include <memory>
 #include <string>
 
 class Channel;
@@ -20,7 +20,7 @@ class EventLoop;
 class Socket;
 
 /**
- * TcpServer -> Accpter -> 有一个新用户连接，通过accept函数拿到connfd
+ * TcpServer -> Acceptor -> 有一个新用户连接，通过accept函数拿到connfd
  * -> TcpConnection设置回调 -> Channel -> Poller -> Channel回调
  */
 class TcpConnection : noncopyable , public std::enable_shared_from_this<TcpConnection> {
@@ -39,9 +39,12 @@ public:
 
     bool connected() const { return state_ == kConnected; };
     bool disconnected() const { return state_ == kDisconnected; };
-    //关闭连接
+    //关闭连接（半关闭写端）
     void shutdown();
     void shutdownInLoop();
+
+    //发送数据（线程安全：不在 loop 线程时会转投到 loop 线程执行）
+    void send(const std::string &buf);
 
     void setConnectionCallback(const ConnectionCallback& connectionCallback) {connectionCallback_ = connectionCallback;};
     void setMessageCallback(const MessageCallback& messageCallback) {messageCallback_ = messageCallback;};
@@ -53,19 +56,18 @@ public:
     void connectEstablished();
     void connectDestroyed();
 
-    void setState(StateE state) {state_ = state;};
-    const char* stateToString() const;
-private:
+public:
     enum StateE {
         kDisconnected, kConnecting, kConnected, kDisconnecting
     };
+    void setState(StateE state) {state_ = state;};
+    const char* stateToString() const;
 
+private:
     void handleRead(Timestamp receiveTimestamp);
     void handleWrite();
     void handleClose();
     void handleError();
-
-    void send(const std::string &buf);
 
     void sendInLoop(const void* data, size_t len);
 

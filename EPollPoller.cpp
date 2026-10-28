@@ -7,7 +7,7 @@
 #include <cstring>
 
 #include "logger.h"
-#include "channel.h"
+#include "Channel.h"
 
 #include <errno.h>
 #include <unistd.h>
@@ -36,17 +36,18 @@ EPollPoller::~EPollPoller() {
 
 //实现epoll_wait
 Timestamp EPollPoller::poll(int timeoutMs, ChannelList *activeChannels) {
-    LOG_DEBUG("func=%s => fd total count:%d\n", __func__, channels_.size());
-    int numEvents = ::epoll_wait (epollfd_, &*events_.begin(),
+    LOG_DEBUG("func=%s => fd total count:%d\n", __func__,
+              static_cast<int>(channels_.size()));
+    int numEvents = ::epoll_wait (epollfd_, events_.data(),
                                     static_cast<int>(events_.size()),timeoutMs);
     int saveErrno = errno;
     Timestamp now(Timestamp::now());
 
     if (numEvents > 0) {
-        LOG_DEBUG("%d events happened", numEvents);
+        LOG_DEBUG("%d events happened\n", numEvents);
         fillActiveChannels(numEvents, activeChannels);
-        if (numEvents == events_.size()) {
-            events_.resize(events_.size()*2);
+        if (static_cast<size_t>(numEvents) == events_.size()) {
+            events_.resize(events_.size() * 2);
         }
     } else if (numEvents == 0) {
         LOG_DEBUG("%s timeout!\n", __func__);
@@ -85,7 +86,6 @@ void EPollPoller::updateChannel(Channel *channel) {
         update(EPOLL_CTL_ADD, channel);
     } else {
         // channel已经在poller上注册过了
-        int fd = channel -> fd();
         if (channel -> isNoneEvent()) {
             update(EPOLL_CTL_DEL, channel);
             channel -> set_Index(kDeleted);
@@ -98,7 +98,10 @@ void EPollPoller::updateChannel(Channel *channel) {
 void EPollPoller::removeChannel(Channel *channel) {
     int fd = channel -> fd();
     int index = channel -> index();
-    channels_.erase(fd);
+    auto it = channels_.find(fd);
+    if (it != channels_.end() && it->second == channel) {
+        channels_.erase(it);
+    }
     if (index == kAdded) {
         update(EPOLL_CTL_DEL, channel);
     }
@@ -113,7 +116,6 @@ void EPollPoller::update(int operation, Channel *channel) {
     int fd = channel -> fd();
 
     event.events = channel -> events();
-    event.data.fd = fd;
     event.data.ptr = channel;
 
     if (::epoll_ctl(epollfd_, operation, fd, &event) < 0) {

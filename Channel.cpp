@@ -53,7 +53,8 @@ void Channel::handleEvent(Timestamp receiveTime) {
 //根据poller监听的channel发生的具体事件，由channel负责调用具体的回调操作
 void Channel::handleEventWithGuard(Timestamp receiveTime) {
     LOG_INFO("channel handleEvents revents:%d\n", revents_);
-    if ((revents_ & EPOLLUP) && !(revents_ & EPOLLIN)) {
+    // EPOLLHUP：对端关闭；此时如果没有可读事件，直接走关闭回调
+    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
         if (closeCallback_) {
             closeCallback_();
         }
@@ -65,7 +66,8 @@ void Channel::handleEventWithGuard(Timestamp receiveTime) {
         }
     }
 
-    if (revents_ & EPOLLIN) {
+    // EPOLLRDHUP：对端半关闭（收到 FIN），同样按可读处理，交给上层 read 返回 0
+    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
         if (readCallback_) {
             readCallback_(receiveTime);
         }

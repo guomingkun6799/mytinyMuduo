@@ -3,7 +3,7 @@
 //
 
 #include "Poller.h"
-#include "channel.h"
+#include "Channel.h"
 
 Poller::Poller(EventLoop* loop) :
      ownerloop_(loop)

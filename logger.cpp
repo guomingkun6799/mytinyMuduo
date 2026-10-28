@@ -2,6 +2,7 @@
 // Created by ma-te on 2026/10/11.
 //
 #include <iostream>
+#include <mutex>
 
 #include "logger.h"
 #include "Timestamp.h"
@@ -17,6 +18,9 @@ void Logger::setLogLevel(int level) {
 
 // 写日志 [级别信息] time : msg
 void Logger::log(std::string msg) {
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+
     switch (logLevel_) {
         case INFO:
             std::cout << "[INFO]";
@@ -33,5 +37,5 @@ void Logger::log(std::string msg) {
         default:
             break;
     }
-    std::cout <<Timestamp::now().toString() << ":" << msg << std::endl;
+    std::cout << Timestamp::now().toString() << ":" << msg << std::endl;
 }

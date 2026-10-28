@@ -52,9 +52,10 @@ public:
     void set_Index(int index) { index_ = index; };
 
     //one loop per thread
-    EventLoop* ownerLoop() {return loop_};
+    EventLoop* ownerLoop() {return loop_;};
     void remove();
 
+private:
     void update();
     void handleEventWithGuard(Timestamp receiveTime);
 

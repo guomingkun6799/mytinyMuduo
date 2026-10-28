@@ -6,8 +6,12 @@
 #include "logger.h"
 #include "TcpConnection.h"
 
+#include <cstdio>
+#include <errno.h>
 #include <functional>
 #include <strings.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 static  EventLoop* CheckLoopNotNull(EventLoop *loop) {
     if (loop == nullptr) {
@@ -20,17 +24,19 @@ TcpServer::TcpServer(EventLoop *loop, const InetAddress &listenAddr, const std::
     : loop_(CheckLoopNotNull(loop))
     , ipPort_(listenAddr.toIpPort())
     , name_(nameArg)
-    , accpter_(new Accpter(loop, listenAddr, option == kNoReusePort))
+    // option == kReusePort 时才复用端口，原来写反了
+    , acceptor_(new Acceptor(loop, listenAddr, option == kReusePort))
     , threadPool_(new EventLoopThreadPool(loop, name_))
     , connectionCallback_()
     , messageCallback_()
+    , started_(0)
     , nextConnId_(1) {
     //当有新用户连接时，会执行newconnection回调
-    accpter_ -> setNewConnectionCallback(
+    acceptor_ -> setNewConnectionCallback(
         std::bind(&TcpServer::newConnection, this,std::placeholders::_1,std::placeholders::_2));
 }
 
-// 有一个新的客户端的连接,accpter会执行这个回调
+// 有一个新的客户端的连接,acceptor会执行这个回调
 void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     EventLoop* ioLoop = threadPool_->getNextLoop();//轮询选择一个subloop
     char buf[64] = {0};
@@ -43,8 +49,8 @@ void TcpServer::newConnection(int sockfd, const InetAddress &peerAddr) {
     sockaddr_in local;
     ::bzero(&local, sizeof(local));
     socklen_t addrlen = static_cast<socklen_t>(sizeof(local));
-    if (::getsockname(sockfd, (sockaddr*)&local, &addrlen) < 0) {
-        LOG_ERROR("sockets::getLocalAddr");
+    if (::getsockname(sockfd, reinterpret_cast<sockaddr*>(&local), &addrlen) < 0) {
+        LOG_ERROR("sockets::getLocalAddr failed, errno=%d\n", errno);
     }
 
     InetAddress localAddr(local);
@@ -74,7 +80,7 @@ void TcpServer::setThreadNum(int threadNum) {
 void TcpServer::start() {
     if (started_++ == 0) { //防止一个TcpServer启动多次
         threadPool_ -> start(threadInitCallback_);
-        loop_->runInLoop(std::bind(&Accpter::listen, accpter_.get()));
+        loop_->runInLoop(std::bind(&Acceptor::listen, acceptor_.get()));
     }
 }
 

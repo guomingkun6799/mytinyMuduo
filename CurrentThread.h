@@ -9,10 +9,10 @@ namespace CurrentThread {
     void cachedTid();
 
     inline int tid() {
-        if (__builtin_expect((t_cachedTid != 0), 0)) {
+        if (__builtin_expect(t_cachedTid == 0, 0)) {
             cachedTid();
         }
         return t_cachedTid;
     }
-};
+}
 

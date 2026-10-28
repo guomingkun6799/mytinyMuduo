@@ -4,15 +4,18 @@
 
 #pragma once
 
+#include <sys/types.h>      // ssize_t
+
 #include <vector>
 #include <string>
+#include <cstring>
 #include <algorithm>
 
 //网络库底层的缓冲器类型
 class buffer {
 public:
-    static const size_t kCheapPrepend = 8;
-    static const size_t kInitialSize = 1024;
+    static constexpr size_t kCheapPrepend = 8;
+    static constexpr size_t kInitialSize = 1024;
 
     explicit buffer(size_t initialSize = kInitialSize)
         : buffer_(kCheapPrepend + initialSize)
@@ -83,7 +86,6 @@ public:
     //从fd上读取数据
     ssize_t readFd(int fd, int* savedErrno);
     //往fd写出数据
-    ssize_t writeFd(int fd, int* savedErrno);
     ssize_t writeFd(int fd, int* savedErrno);
 
 private:
